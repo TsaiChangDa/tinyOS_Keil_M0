@@ -26,7 +26,7 @@
 #define  OSCLOCK_1M       1000000
 
            // select OS tick
-#define  CLOCKOS          OSCLOCK_50mS 
+#define  CLOCKOS          OSCLOCK_100mS 
 
            // check safety
 #define  COUNTSTARTOS     10
