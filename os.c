@@ -97,7 +97,7 @@ qbodyOS       QBodyOS[QSIZE];
 qtxrxOS       QTxRxOS[QSIZE];
 void*         PendQRetrieveOS[QSIZE][QLENGTH];
 char          SleepPendQOS[QSIZE];
-char          FlagTxRx = 0;
+char          FlagTxRxOS = 0;
 
 int           SystemTickOS;
 int           TaskClockOS[TASKSIZE+1][2];   // [0]- before task   [1]- after task
@@ -779,7 +779,7 @@ void SysTick_Handler(void)
 	
 	   SystemTickOS++;
 
-	   if ( FlagTxRx )
+	   if ( FlagTxRxOS )
 		 {
 	       qTxOS();
 	       qRxOS();
@@ -2488,7 +2488,7 @@ void qTxIntFloatOS(int qNo, void* pData, int length, char power)
 		   QBodyOS[qNo].inIndex = 0;
 	  }
 	  QTxRxOS[qNo].completeTx = 0;	 
-		FlagTxRx = 1;
+		FlagTxRxOS = 1;
 	ENABLE_INTERRUPT;
 }
 
@@ -2572,7 +2572,7 @@ void qRxIntFloatOS(int qNo, void* pData)
 		   QBodyOS[qNo].outIndex = 0;
 	  }
 	  QTxRxOS[qNo].completeRx = 0;	
-		FlagTxRx = 1;
+		FlagTxRxOS = 1;
 	ENABLE_INTERRUPT;	
 }
 				 
