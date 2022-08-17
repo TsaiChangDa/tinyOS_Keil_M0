@@ -95,7 +95,7 @@ int           DelayUntilPriorityOS[UNTILSIZE];  // priority
 
 qbodyOS       QBodyOS[QSIZE];
 qtxrxOS       QTxRxOS[QSIZE];
-void*         PendQRetrieveOS[QSIZE][QLENGTH];
+void*         qRetrieveOS[QSIZE][QLENGTH];
 char          SleepPendQOS[QSIZE];
 char          FlagTxRxOS = 0;
 
@@ -2315,7 +2315,7 @@ void* readQOS(int number, int* items)
 		     {
 	            outIndex = QBodyOS[number].outIndex++;
 					  DISABLE_INTERRUPT;	
-              PendQRetrieveOS[number][i] = QBodyOS[number].q[outIndex];						 
+              qRetrieveOS[number][i] = QBodyOS[number].q[outIndex];						 
 					 
 		          if( QBodyOS[number].outIndex >= QLENGTH )
 			        {
@@ -2324,7 +2324,7 @@ void* readQOS(int number, int* items)
 						ENABLE_INTERRUPT;						
 		     } // for	
 				
-				 retrieveAddress = PendQRetrieveOS[number];
+				 retrieveAddress = qRetrieveOS[number];
 				 *items = QBodyOS[number].items;	
 				DISABLE_INTERRUPT;	
 				 QBodyOS[number].items = 0;   // clear message
@@ -2443,7 +2443,7 @@ int qReadyNumberOS(void* retrieveAddress)
 	
 	  for(i=0; i<QSIZE; i++)
 		{
-			  if( (int)retrieveAddress == (int)&PendQRetrieveOS[i][0] )
+			  if( (int)retrieveAddress == (int)&qRetrieveOS[i][0] )
 				{
 					   number = i;
 				}
