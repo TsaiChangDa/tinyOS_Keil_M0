@@ -226,12 +226,14 @@ char checkSetBitOS(unsigned int  *Table, int priority)
 	  bit = priority % 32;	
 	  priorityBit |=  ( 1<< bit );
 	  priorityBit &= Table[index];
+	
+	  bit =1;
 	  if ( priorityBit == 0x0 )    
 	  {
-		    return 0;
+		    bit = 0;
 	  }
 	 
-	  return 1;
+	  return bit;
 }
 
 
@@ -505,10 +507,7 @@ void assignPaddingSpOS(void)
 	  int totalPadding;
 	  int k;
 		int eachTotal;
-	  int amount= 0;
-
-		totalPadding =  ramToPaddingOS(STACKRAMBYTES, TASKSIZE);
-	  AutoPackItemsOS = (totalPadding - PADDINGIDLE) / (int)TASKSIZE;	
+	  int amount = 0;
 	
 	  for(i=0; i<TASKSIZE; i++)
 		{
@@ -517,6 +516,9 @@ void assignPaddingSpOS(void)
 		
 		if ( amount == 0 )  // use STACKRAMBYTES and AutoPackItemsOS
 		{
+				totalPadding =  ramToPaddingOS(STACKRAMBYTES, TASKSIZE);
+	      AutoPackItemsOS = (totalPadding - PADDINGIDLE) / (int)TASKSIZE;	
+			
 	      for(i=0; i<TASKSIZE; i++)
 		    {
 			      PaddingOS[i] = AutoPackItemsOS;	
@@ -552,13 +554,13 @@ char checkStartErrorOS(int arraySize, int startPriority)
 			    amount += PaddingOS[i];
 		  }	
 			
-      if (  paddingToRamOS(amount, TASKSIZE) > (int)STACKRAMBYTES )
+      if ( paddingToRamOS(amount, TASKSIZE) > STACKRAMBYTES )
 			{
 			    errorCode = 1;  	// amount > 0			
 			}
 	
                       // Q needs MEMORYPOOLBYTES
-      if ( MEMORYPOOLBYTES < QSIZE * (qBYTES + BULKBYTES) )  
+      if ( QSIZE * (qBYTES + BULKBYTES) > MEMORYPOOLBYTES )  
 		  { 	
 			    errorCode = 2;     
 		  }	
@@ -675,7 +677,7 @@ char justifyNumberArrayOS(int *array)  // terminating sign in array
 {
 	   int  previousNumber = -3;
 	   int  i;
-	   char error;
+	   char error = 1;  //  no terminating sign
 	
 	   i = 0;  										
      while( ( array[i] >= 0) && ( array[i] != previousNumber )  )								 
@@ -684,7 +686,6 @@ char justifyNumberArrayOS(int *array)  // terminating sign in array
 		      i++;
 		 } 	
 
-		 error = 1;    //  no terminating sign
      if ( array[i] < 0 )
 		 {
           error = 0;
@@ -1214,7 +1215,7 @@ void postSemOS(int number)
 						       if ( priority != CurrentPriorityOS )
 							     {
 								       array = EventNumberTaskOS[i].numberArray;
- 								       previousValue = -3;
+ 								       previousValue = -999;
                        k = 0;   
 										 
                        while( ( array[k] >= 0) && ( array[k] != previousValue ) )								 
@@ -1335,7 +1336,7 @@ void postMailOS(int number, void *messageAddr)
 						       if ( priority != CurrentPriorityOS )
 							     {
 								       array = EventNumberTaskOS[i].numberArray;
- 								       previousValue = -3;
+ 								       previousValue = -999;
                        k = 0;   
 										 
                        while( ( array[k] >= 0) && ( array[k] != previousValue ) )								 
@@ -1496,7 +1497,7 @@ void postFlagOS(int number, unsigned int modifyPublicFlag, char setOrClear )
 								  if(   priority != CurrentPriorityOS   )
 							    {
 								     array = EventNumberTaskOS[i].numberArray;
- 								     previousValue = -3;
+ 								     previousValue = -999;
                      k = 0;   
 										
                      while( ( array[k] >= 0) && ( array[k] != previousValue ) )								 
@@ -1796,7 +1797,7 @@ int optimalFreeMemoryOS(int desiredBulkLength, int* minOptimum)
 						   length1 = 1;
 					     setBit = checkSetBitOS(FreeBulkNoOS, i+1); // find continuous free bulk
 							 
-	             while( (i+length1 < GLOBALBULKLENGTH) && setBit )
+	             while( setBit && (i+length1 < GLOBALBULKLENGTH) )
 		           {
 			             length1++;
 						       if( i+length1 < GLOBALBULKLENGTH )
@@ -2254,7 +2255,7 @@ int postQOS(int number, void *messageAddr)
 						      if ( priority != CurrentPriorityOS )
 					        {
 							       array = EventNumberTaskOS[i].numberArray;
-	 							     previousValue = -3;
+	 							     previousValue = -999;
                      k = 0; 
 
                      while( ( array[k] >= 0) && ( array[k] != previousValue ) )								 
@@ -2338,12 +2339,10 @@ void* readQOS(int number, int* items)
 
 int findItemNumberOS(int *array)
 {
-	   int  k;	
-     int  previousValue;		
+	   int  k = 0;	
+     int  previousValue = -999;		
      int  number;	
-	
- 		 previousValue = -3;
-     k = 0;   
+  
 		 number = array[0];
 	
      while( ( number >= 0) && (number < QSIZE) && ( number != previousValue ) && (QBodyOS[number].items == 0) )								 
