@@ -1443,6 +1443,138 @@ void* pendMailOS(int *array, int *readyNumberAddr, char clear, int timeout)
 }
 
 
+
+/*****************************************************************/
+/*                           Mutex                               */
+/*****************************************************************/
+
+void postMutexOS(void)
+{
+	  int i;
+	  int number;
+	  int index;
+	  int priority;
+	  int minPriority= 99999999;
+	  int minIndex= -1;
+	  int *array;	
+	
+		if( interruptNumberOS() == 0 )  // ISR can not call postMutexOS()
+		{		
+	     index = currentPriorityMapEventIndexOS(MUTEX);	
+	     if( index >= 0 )
+	     {
+		   	  number = EventNumberTaskOS[index].readyNumber;  // own the mutex number
+			   	if( (number >= 0) && (number < MUTEXSIZE) && (MutexOwnerOS[number] == CurrentPriorityOS) )
+			   	{
+					   clearTableOS(PriorityOwnEventOS, CurrentPriorityOS);
+					  DISABLE_INTERRUPT;	
+				     EventNumberTaskOS[index].numberArray = 0x0;
+				     EventNumberTaskOS[index].readyNumber = -1;
+						 MutexOwnerOS[number] = -1;		 // mutex is free	
+					  ENABLE_INTERRUPT;		
+			
+						 if( IsStartPendOS(MUTEX) )
+						 {
+		            for( i = 0; i < PENDSIZE; i++  )   // ready the highest priority
+                {
+							     if ( EventNumberTaskOS[i].eventType == MUTEX )
+							     {
+				               priority =  EventNumberTaskOS[i].priority;	
+
+						           if ( priority != CurrentPriorityOS )
+							         {
+							             array = EventNumberTaskOS[i].numberArray;   
+ 
+									         if(  (array[0] == number) && (priority < minPriority) )
+									         {
+												      minPriority = priority;
+												      minIndex = i;													
+								           }
+							         } // if ( priority != CurrentPriorityOS )
+														
+							     } // if ( EventNumberTaskOS[i].eventType == SEM )
+	
+                } // for	
+					   } // if( IsStartPendOS(MUTEX) )
+						
+						 if( minIndex >= 0 )
+						 {
+							  DISABLE_INTERRUPT;	
+							   MutexOwnerOS[number] = minPriority;						
+			           EventNumberTaskOS[minIndex].readyNumber = number;	
+							 	 EventNumberTaskOS[minIndex].numberArray = 0x0;	
+							  ENABLE_INTERRUPT;
+												
+							   resumeTaskOS(minPriority);							
+						 }					
+						
+	        } // if(  (number >= 0) && (number < MUTEXSIZE)  )
+				
+	     } // if( index >= 0 )					 
+	
+		   executeHighestPriorityTaskOS();	  
+		
+		} // if( interruptNumberOS() == 0 )
+		
+}
+
+
+int pendMutexOS(int *array, int timeout)
+{
+     int  index;
+	   int  number;
+	   int  readyNumber= -1;
+
+	   if ( interruptNumberOS() == 0 )
+		 {
+	      index = currentPriorityMapEventIndexOS(MUTEX);				 
+
+		    if( index >= 0 )
+	      {
+					   number = array[0];  // only one mutex
+					   if( MutexOwnerOS[number] == CurrentPriorityOS )
+						 {
+							    return number;
+						 }
+						 
+		       DISABLE_INTERRUPT;
+			 	     EventNumberTaskOS[index].priority = CurrentPriorityOS;					 
+				     EventNumberTaskOS[index].numberArray = array; 
+				     EventNumberTaskOS[index].eventType = MUTEX;					
+		       ENABLE_INTERRUPT;	
+			 
+			       if( (number < MUTEXSIZE) && (MutexOwnerOS[number] < 0) )
+				     {
+							   setTableOS(PriorityOwnEventOS, CurrentPriorityOS);
+		           DISABLE_INTERRUPT;											
+                 MutexOwnerOS[number] = CurrentPriorityOS;
+							   EventNumberTaskOS[index].numberArray = 0x0;		
+			           EventNumberTaskOS[index].readyNumber = number;
+		           ENABLE_INTERRUPT;												
+			        } // if( number < MUTEXSIZE )
+	            else
+			   	    {		
+                 pauseTaskOS(timeout);		
+	
+	               executeHighestPriorityTaskOS();
+			   	    }
+				 
+		     }	// if( index >= 0 )
+				 else
+				 {
+					 DISABLE_INTERRUPT;
+					   ErrorPendSizeOS = 1;
+					 ENABLE_INTERRUPT;
+				 }
+				
+				 readyNumber = readReadyNumberOS(MUTEX);
+		 
+		 } // if ( interruptNumberOS() == 0 )
+		 
+     return readyNumber;		// the only one (array) element
+}
+
+
 /*****************************************************************/
 /*                            Flag                               */
 /*****************************************************************/
@@ -1627,137 +1759,6 @@ unsigned int queryPublicFlagOS(int flagNumber)
 char checkPublicFlagBitOS(int flagNumber, char bitNumber)
 {
 	   return  checkSetBitOS( &PublicFlagOS[flagNumber], bitNumber);
-}
-
-
-/*****************************************************************/
-/*                           Mutex                               */
-/*****************************************************************/
-
-void postMutexOS(void)
-{
-	  int i;
-	  int number;
-	  int index;
-	  int priority;
-	  int minPriority= 99999999;
-	  int minIndex= -1;
-	  int *array;	
-	
-		if( interruptNumberOS() == 0 )  // ISR can not call postMutexOS()
-		{		
-	     index = currentPriorityMapEventIndexOS(MUTEX);	
-	     if( index >= 0 )
-	     {
-		   	  number = EventNumberTaskOS[index].readyNumber;  // own the mutex number
-			   	if( (number >= 0) && (number < MUTEXSIZE) && (MutexOwnerOS[number] == CurrentPriorityOS) )
-			   	{
-					   clearTableOS(PriorityOwnEventOS, CurrentPriorityOS);
-					  DISABLE_INTERRUPT;	
-				     EventNumberTaskOS[index].numberArray = 0x0;
-				     EventNumberTaskOS[index].readyNumber = -1;
-						 MutexOwnerOS[number] = -1;		 // mutex is free	
-					  ENABLE_INTERRUPT;		
-			
-						 if( IsStartPendOS(MUTEX) )
-						 {
-		            for( i = 0; i < PENDSIZE; i++  )   // ready the highest priority
-                {
-							     if ( EventNumberTaskOS[i].eventType == MUTEX )
-							     {
-				               priority =  EventNumberTaskOS[i].priority;	
-
-						           if ( priority != CurrentPriorityOS )
-							         {
-							             array = EventNumberTaskOS[i].numberArray;   
- 
-									         if(  (array[0] == number) && (priority < minPriority) )
-									         {
-												      minPriority = priority;
-												      minIndex = i;													
-								           }
-							         } // if ( priority != CurrentPriorityOS )
-														
-							     } // if ( EventNumberTaskOS[i].eventType == SEM )
-	
-                } // for	
-					   } // if( IsStartPendOS(MUTEX) )
-						
-						 if( minIndex >= 0 )
-						 {
-							  DISABLE_INTERRUPT;	
-							   MutexOwnerOS[number] = minPriority;						
-			           EventNumberTaskOS[minIndex].readyNumber = number;	
-							 	 EventNumberTaskOS[minIndex].numberArray = 0x0;	
-							  ENABLE_INTERRUPT;
-												
-							   resumeTaskOS(minPriority);							
-						 }					
-						
-	        } // if(  (number >= 0) && (number < MUTEXSIZE)  )
-				
-	     } // if( index >= 0 )					 
-	
-		   executeHighestPriorityTaskOS();	  
-		
-		} // if( interruptNumberOS() == 0 )
-		
-}
-
-
-int pendMutexOS(int *array, int timeout)
-{
-     int  index;
-	   int  number;
-	   int  readyNumber= -1;
-
-	   if ( interruptNumberOS() == 0 )
-		 {
-	      index = currentPriorityMapEventIndexOS(MUTEX);				 
-
-		    if( index >= 0 )
-	      {
-					   number = array[0];  // only one mutex
-					   if( MutexOwnerOS[number] == CurrentPriorityOS )
-						 {
-							    return number;
-						 }
-						 
-		       DISABLE_INTERRUPT;
-			 	     EventNumberTaskOS[index].priority = CurrentPriorityOS;					 
-				     EventNumberTaskOS[index].numberArray = array; 
-				     EventNumberTaskOS[index].eventType = MUTEX;					
-		       ENABLE_INTERRUPT;	
-			 
-			       if( (number < MUTEXSIZE) && (MutexOwnerOS[number] < 0) )
-				     {
-							   setTableOS(PriorityOwnEventOS, CurrentPriorityOS);
-		           DISABLE_INTERRUPT;											
-                 MutexOwnerOS[number] = CurrentPriorityOS;
-							   EventNumberTaskOS[index].numberArray = 0x0;		
-			           EventNumberTaskOS[index].readyNumber = number;
-		           ENABLE_INTERRUPT;												
-			        } // if( number < MUTEXSIZE )
-	            else
-			   	    {		
-                 pauseTaskOS(timeout);		
-	
-	               executeHighestPriorityTaskOS();
-			   	    }
-				 
-		     }	// if( index >= 0 )
-				 else
-				 {
-					 DISABLE_INTERRUPT;
-					   ErrorPendSizeOS = 1;
-					 ENABLE_INTERRUPT;
-				 }
-				
-				 readyNumber = readReadyNumberOS(MUTEX);
-		 
-		 } // if ( interruptNumberOS() == 0 )
-		 
-     return readyNumber;		// the only one (array) element
 }
 
 
