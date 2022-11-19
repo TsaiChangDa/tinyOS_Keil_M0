@@ -60,6 +60,7 @@
        // Kernel
 char         startOS(void (*[])(void), int, int, int, void (*)(int));
 void         queryReadyTableOS(char*);
+int          lowPowerModeOS(int*);
 void         endISRpreemptOS(void);
 int          nonBlockingCallbackOS(int (*)(void));
 char         errorPendSizeOS(void);

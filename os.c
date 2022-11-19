@@ -734,12 +734,45 @@ int pendCodeOS(int *array,char eventType)
 
 void queryReadyTableOS(char* result)
 {
-	 int i;
+	  int i;
 	
-	 for (i=0; i<TASKSIZE; i++)
-	 {
-		   result[i] = checkSetBitOS(ReadyTableOS, i);
-	 }
+	  for (i=0; i<TASKSIZE; i++)
+	  {
+		    result[i] = checkSetBitOS(ReadyTableOS, i);
+	  }
+}
+
+
+
+int lowPowerModeOS(int *next)
+{
+	  int i;
+	  int ready = 0;
+	  int tick = 999999;
+	
+	  for (i=0; i<TASKSIZE; i++)
+	  {
+		    if ( checkSetBitOS(ReadyTableOS, i) )
+				{
+					  ready++;
+				}
+	  }
+
+    if ( ready == 1 )
+		{
+	     for (i=0; i<TASKSIZE; i++)
+	     {
+			     if ( (i != CurrentPriorityOS) && (WaitTickOS[i] < tick) )
+					 {
+							 tick = WaitTickOS[i];
+						 	 *next = i;
+					 }
+		   }
+		}		
+
+    tick = ( (tick > 2) && (tick != 999999) )	? tick - 1 : -1;
+	
+		return  tick;
 }
 
 
@@ -786,7 +819,7 @@ void SysTick_Handler(void)
 	       qRxOS();
 		 }
 	
-     for( i=0; i<= TASKSIZE-1; i++ )   // i is task's priority
+     for( i=0; i< TASKSIZE; i++ )   // i is task's priority
      {
          if ( WaitTickOS[i] >= 1 )		// be not ready if WaitTickOS[] < 0, only acquiring event can let the infinite waiting task be ready   
          {
