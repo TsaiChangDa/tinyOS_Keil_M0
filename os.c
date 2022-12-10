@@ -105,7 +105,7 @@ unsigned int  TaskExecuteClockOS[TASKSIZE+1];  // clock elapsed
 int           TaskLoadOS[TASKSIZE];       // %
 
 /*****************************************************************/
-/*                      kernel                                   */
+/*                        Task                                   */
 /*****************************************************************/
 
 void* mallocOS(int);                  // called by initializeEventOS()
@@ -750,6 +750,8 @@ int lowPowerModeOS(int *next)
 	  int ready = 0;
 	  int tick = 999999;
 	
+	  *next = -1;
+	
 	  for (i=0; i<TASKSIZE; i++)
 	  {
 		    if ( checkSetBitOS(ReadyTableOS, i) )
@@ -861,6 +863,7 @@ char errorPendSizeOS(void)
 {
 	  return ErrorPendSizeOS;
 }
+
 
 /*****************************************************************/
 /*                          Stack                                */

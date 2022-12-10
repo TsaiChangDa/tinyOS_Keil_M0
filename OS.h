@@ -2,15 +2,25 @@
 #include "PORT.h"
 
 #if   defined ( CM0 )
-
-   #define  ASSERTOS(x) if( !(x) ){ __asm( "cpsid i		\n" ); for(;;); }
+	 #define  ASSERTOS(x) if( !(x) ){ __asm( "cpsid i		\n" ); for(;;); }
 	 #define  DISABLE_INTERRUPT  __asm( "cpsid i		\n" );
    #define  ENABLE_INTERRUPT   __asm( "cpsie i		\n" );
-
+	 #define  CPUREGISTER         17
+		 
    #if   defined ( NXP )
       #include <LPC11xx.h>
 	    #define  CPUclockOS   SystemCoreClock
    #endif
+#endif
+	 
+#if   defined ( ARM )     
+  #define  WORDSIZE    4
+       // core register address
+  #define SystickControlRegisterOS       ( *( ( volatile unsigned int* ) 0xE000E010 ) )
+  #define SystickLoadRegisterOS          ( *( ( volatile unsigned int* ) 0xE000E014 ) )
+  #define SystickCurrentValueRegisterOS  ( *( ( volatile unsigned int* ) 0xE000E018 ) )
+  #define InterruptControlRegisterOS     ( *( ( volatile unsigned int* ) 0xE000ED04 ) )
+  #define HandlerPriorityRegisterOS      ( *( ( volatile unsigned int* ) 0xE000ED20 ) )  //SHPR3
 #endif
 
 #define  OSCLOCK_1S       CPUclockOS 
@@ -122,6 +132,7 @@ void         qTxIntFloatOS(int, void*, int, char);
       // Task Loading
 int*         relativeTaskLoadOS(void);
 int          idleTaskLoadOS(void);
-
+	
+	
 
 
