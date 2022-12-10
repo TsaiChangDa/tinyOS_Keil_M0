@@ -21,6 +21,7 @@ void task0(void)
 	  while(1)
     { 
 				 queryReadyTableOS(carray);
+			   lowPowerModeOS(0x0);
 			   endISRpreemptOS();
 			   nonBlockingCallbackOS(xx);
 			   errorPendSizeOS();
