@@ -1,5 +1,5 @@
 
-#include "PORT.h"
+
 
 /*	
 PEND MAIL      3     // task0,task6,task7
@@ -25,20 +25,6 @@ PEND FLAG      5     // task1,task2,task3,task4,task5
 int PaddingOS[TASKSIZE+1] = {0};  
 #define  PADDINGIDLE       0      // idleTaskOS() padding
 
-#if   defined ( ARM )     
-  #define  WORDSIZE    4
-       // core register address
-  #define SystickControlRegisterOS       ( *( ( volatile unsigned int* ) 0xE000E010 ) )
-  #define SystickLoadRegisterOS          ( *( ( volatile unsigned int* ) 0xE000E014 ) )
-  #define SystickCurrentValueRegisterOS  ( *( ( volatile unsigned int* ) 0xE000E018 ) )
-  #define InterruptControlRegisterOS     ( *( ( volatile unsigned int* ) 0xE000ED04 ) )
-  #define HandlerPriorityRegisterOS      ( *( ( volatile unsigned int* ) 0xE000ED20 ) )  //SHPR3
-#endif
-
-#if   defined ( CM0 )
-	#define  CPUREGISTER         17
-#endif
-	
 
 
 
