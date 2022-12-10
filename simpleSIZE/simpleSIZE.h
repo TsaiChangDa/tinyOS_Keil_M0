@@ -1,9 +1,8 @@
+
 // rename simpleSIZE.h as SIZE.h
 
-#include "PORT.h"
-
 	  // task
-#define  TASKSIZE        4 
+#define  TASKSIZE          2 
 #define  STACKRAMBYTES     (CPUREGISTER + 40)*WORDSIZE*(TASKSIZE + 1)
 
     // event and service
@@ -20,3 +19,4 @@
     // padding part of task stack(selective)
 int PaddingOS[TASKSIZE+1] = {0};  
 #define  PADDINGIDLE       0      // idleTaskOS() padding
+
