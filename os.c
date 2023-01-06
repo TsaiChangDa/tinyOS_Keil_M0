@@ -58,7 +58,7 @@ int           TickPerSecondOS;
 int           WaitTickOS[TASKSIZE];     // exclude idleTaskOS()
 int           ScheduleISROS = 0;
 unsigned int  ReadyTableOS[TABLELENGTH];  // bit index is priority
-int           CountTaskOS[TASKSIZE]; 
+unsigned int  CountTaskOS[TASKSIZE]; 
 char          ErrorPendSizeOS = 0;
 
 unsigned int* TaskSpPointerOS[TASKSIZE+1];  // include idleTaskOS()
@@ -268,11 +268,11 @@ void currentExecuteClockOS(void)
 		
 		TaskExecuteClockOS[CurrentPriorityOS] += clockDifference;
 
-		if ( TaskExecuteClockOS[CurrentPriorityOS] > 0xdfffffff )
+		if ( TaskExecuteClockOS[CurrentPriorityOS] > 4000000000 )
 		{  
 			  for (i=0; i<=TASKSIZE; i++)
 				{
-		        TaskExecuteClockOS[i] = 0x0;			
+		        TaskExecuteClockOS[i] = 0;			
 				}
 				
 			  SystemTickOS = 0;
@@ -280,6 +280,23 @@ void currentExecuteClockOS(void)
 	 ENABLE_INTERRUPT; 		
 }
 
+
+int highestEventPriorityOS(void)
+{
+	  int  i;
+    int  highestPriority = -1;	
+	
+	  for (i=0; i<TASKSIZE; i++)
+		{
+			  if ( checkSetBitOS(PriorityOwnEventOS, i) )
+				{
+					  highestPriority = i;
+					  break;
+				}
+		}
+	
+		return  highestPriority;
+}
 
 
 void executeHighestPriorityTaskOS(void)  // do not need waitTick
@@ -297,27 +314,31 @@ void executeHighestPriorityTaskOS(void)  // do not need waitTick
  		{
 			  while ( danger > 0 )
 				{  
-				     index = 0;
-		         while (  ReadyTableOS[index] == 0  )
-		         {
-				         index++;		
-		         }
+					  highestPriority = highestEventPriorityOS();
+					  if ( highestPriority < 0 )
+						{
+				        index = 0;
+		            while (  ReadyTableOS[index] == 0  )
+		            {
+				            index++;		
+		            }
 
-              highestPriority =  findLeastBitOS(ReadyTableOS[index]);
+                 highestPriority =  findLeastBitOS(ReadyTableOS[index]);
 				
-					    if ( index >= 1 )
-					    {
-					        base = 0;
-	                for ( i = index; i > 0; i-- )
-		              {
-			               base += 32;
-		              }
-	                highestPriority += base;
-					    }
+					       if ( index >= 1 )
+					       {
+					           base = 0;
+	                   for ( i = index; i > 0; i-- )
+		                 {
+			                  base += 32;
+		                 }
+	                   highestPriority += base;
+					       }
+						}
 							
-							danger = 0;
-							if ( checkSetBitOS(DangerStackOS, highestPriority) > 0 )
-							{ 
+						danger = 0;
+						if ( checkSetBitOS(DangerStackOS, highestPriority) > 0 )
+						{ 
 								   danger = 1;
 								   if ( overflowHandlerOS != NULL)
 								   {
@@ -329,22 +350,22 @@ void executeHighestPriorityTaskOS(void)  // do not need waitTick
 								  DISABLE_INTERRUPT;	
 	                 WaitTickOS[highestPriority] = INFINITEOS;
 	                ENABLE_INTERRUPT;
-						  }
+						}
 			  } // while  
 
 				if( CurrentPriorityOS != (int)TASKSIZE ) 
 			  {
-							 CountTaskOS[CurrentPriorityOS]++;
+						 CountTaskOS[CurrentPriorityOS]++;
 									
-							 if (CountTaskOS[CurrentPriorityOS] >= COUNTSTARTOS )
-               {							
-						        checkSafeLevelOS();
-							 }
+						 if ( CountTaskOS[CurrentPriorityOS] >= COUNTSTARTOS )
+             {							
+						      checkSafeLevelOS();
+						 }
 										
-							 if ( CountTaskOS[CurrentPriorityOS] > 99999999 )
-               {
-	                  CountTaskOS[CurrentPriorityOS] = COUNTSTARTOS;
-               }
+						 if ( CountTaskOS[CurrentPriorityOS] > 4000000000 )  // max = 4,294,967,295
+             {
+	                CountTaskOS[CurrentPriorityOS] = COUNTSTARTOS;
+             }						  
 				 }
 						      	    // executable condition
          if( highestPriority != CurrentPriorityOS )
@@ -369,6 +390,10 @@ void executeHighestPriorityTaskOS(void)  // do not need waitTick
          }
  
 		} // if( ( !setBit ) || ( CurrentPriorityOS ==  TASKSIZE ) ) 
+		else if( setBit ) 
+		{
+			  CountTaskOS[CurrentPriorityOS]++;
+		}
 }
 
 
@@ -1283,10 +1308,11 @@ void postSemOS(int number)
 				 } //	if(  IsPending(SEM) )
 		
 	   } // if (  number >= 0 )
-		
+
 	   if( interruptNumberOS() == 0 )
 		 {		 
-         executeHighestPriorityTaskOS();	 
+         executeHighestPriorityTaskOS();
+			   CountTaskOS[CurrentPriorityOS]--;			 
 		 }
 		 else
 		 {
@@ -1404,10 +1430,11 @@ void postMailOS(int number, void *messageAddr)
 				 } //	if(  IsPending(MAIL) )
 		
 	   } // if (  number >= 0 )
-		
+
 	   if( interruptNumberOS() == 0 )
-		 {		 
-         executeHighestPriorityTaskOS();	 
+		 {
+         executeHighestPriorityTaskOS();
+			   CountTaskOS[CurrentPriorityOS]--;			 
 		 }
 		 else
 		 {
@@ -1493,7 +1520,7 @@ void postMutexOS(void)
 	  int minPriority= 99999999;
 	  int minIndex= -1;
 	  int *array;	
-	
+			 
 		if( interruptNumberOS() == 0 )  // ISR can not call postMutexOS()
 		{		
 	     index = currentPriorityMapEventIndexOS(MUTEX);	
@@ -1547,8 +1574,9 @@ void postMutexOS(void)
 	        } // if(  (number >= 0) && (number < MUTEXSIZE)  )
 				
 	     } // if( index >= 0 )					 
-	
-		   executeHighestPriorityTaskOS();	  
+				 
+		   executeHighestPriorityTaskOS();	 
+			 CountTaskOS[CurrentPriorityOS]--;			 
 		
 		} // if( interruptNumberOS() == 0 )
 		
@@ -1724,10 +1752,11 @@ void postFlagOS(int number, unsigned int modifyPublicFlag, char setOrClear )
 		   } // if(  IsPending(FLAG) )
 			   
  		 }	//  if ( number < FLAGSIZE )	
-
+		 
 	   if( interruptNumberOS() == 0 )
 		 {		 
-         executeHighestPriorityTaskOS();	 
+         executeHighestPriorityTaskOS(); 
+			   CountTaskOS[CurrentPriorityOS]--;			 
 		 }
 		 else
 		 {
@@ -2320,10 +2349,11 @@ int postQOS(int number, void *messageAddr)
 				  }	// if(  IsPending(Q) ) 
 
 	   } // if ( number >= 0 )
-
+				 
 	   if( interruptNumberOS() == 0 )
 		 {		 
-         executeHighestPriorityTaskOS();	 
+         executeHighestPriorityTaskOS();	
+			   CountTaskOS[CurrentPriorityOS]--;			 
 		 }
 		 else
 		 {
@@ -2674,25 +2704,24 @@ void qRxOS(void)
 
 int* relativeTaskLoadOS(void)
 {
-    int i;	
-	  int rounding;
+    int   i;	
+	  int   rounding;
     long double   totalClock = 0.0;
-
+	
 	  for (i=0; i< TASKSIZE; i++)  // exclude idleTask()
 		{
-			  totalClock += (long double)TaskExecuteClockOS[i];
+				totalClock += (long double)CountTaskOS[i];
 		}
-		
+
 	  for (i=0; i< TASKSIZE; i++)
 		{
-			  TaskLoadOS[i] = (int)((long double)TaskExecuteClockOS[i] / totalClock * (long double)100);   // int number
-			
-			  rounding = (int)((long double)TaskExecuteClockOS[i] / totalClock * (long double)1000) % 10;
-			  if ( rounding >= 5)
-				{
-					  TaskLoadOS[i]++;
-				}
-		}	
+			 TaskLoadOS[i] = (int)((long double)CountTaskOS[i] / totalClock * 100);
+			 rounding = (int)((long double)CountTaskOS[i] / totalClock * 1000) % 10;		
+			 if ( rounding >= 5)
+			 {
+				   TaskLoadOS[i]++;
+			 }
+		}
 		
 		return  TaskLoadOS;	
 }
@@ -2712,7 +2741,7 @@ int idleTaskLoadOS(void)
 		
 		percentage = (int)((long double)TaskExecuteClockOS[TASKSIZE] / totalClock * 100); 
 		
-		rounding = (int)((long double)TaskExecuteClockOS[TASKSIZE] / totalClock * (long double)1000) % 10;
+		rounding = (int)((long double)TaskExecuteClockOS[TASKSIZE] / totalClock * 1000) % 10;
 		if ( rounding >= 5)
 		{
 				  percentage++;
@@ -2720,6 +2749,7 @@ int idleTaskLoadOS(void)
 				
 		return percentage;
 	}
+
 
 /*************************************************************/
 
