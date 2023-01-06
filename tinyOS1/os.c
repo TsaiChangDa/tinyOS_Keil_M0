@@ -155,14 +155,39 @@ __asm void setCONTROLOS(unsigned int usePSP)
 	  BX   LR	
 }
 
+
+
+int highestEventPriorityOS(void)
+{
+	  int  i;
+    int  highPriority = -1;	
+	
+	  for (i=0; i<TASKSIZE; i++)
+		{
+			  if ( PriorityOwnEventOS[i] == 1 )
+				{
+					  highPriority = i;
+					  break;
+				}
+		}
+	
+		return  highPriority;
+}
+
+
+
                      // 	need set ReadyTableOS, do not need TaskOS[ CurrentPriorityOS ].waitTick = 0;
 void executeHighestPriorityTaskOS(void)
 {	
 	          // task that owns event does not need to schedule. it means the task owns the highest priority to occupy CPU
 	  if ( ( PriorityOwnEventOS[CurrentPriorityOS] < 1 ) || ( CurrentPriorityOS == (int)TASKSIZE ) )  // CurrentPriorityOS  that own events does not switch context( with highest priority )
 		{
-        highestPriority =  findLeastBitOS(ReadyTableOS);
-
+			  highestPriority = highestEventPriorityOS();
+				if ( highestPriority < 0 )
+				{
+            highestPriority =  findLeastBitOS(ReadyTableOS);
+				}
+							
         if(  highestPriority != CurrentPriorityOS   )
         {  
 					  DISABLE_INTERRUPT;
