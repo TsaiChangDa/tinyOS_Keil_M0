@@ -30,8 +30,7 @@ void  initializeUART(int baudrate)
 	    regVal = LPC_UART->RBR;	
    }
    NVIC_EnableIRQ(UART_IRQn);
-   LPC_UART->IER= (1<<0);  
-   
+   LPC_UART->IER= (1<<0);     
 } //  initUART(int baudrate)
 
 
@@ -86,33 +85,39 @@ void print32bits(unsigned  int  y)
 		sendByte(' ');
 }
 
-
-void xx(void)
-{
-	  sendByte('#');	
-}
+int DELAY = 8;
 
 void task0(void)  
-{  
-   while(1) 
-   { 
-       xx();
-		   delayTickOS(20);
-    } 
+{	
+    while(1) 
+    { 
+         sendByte('A');
+				 delayTickOS(DELAY);
+     }  
 } 
+
 
 void task1(void)  
 {
-   while(1) 
-   { 
-       sendByte('B');	
-		   delayTickOS(10);		
+     while(1) 
+     { 
+         sendByte('B');	
+				 delayTickOS(DELAY);
+     } 
+} 
+
+void task2(void)  
+{	
+	  while(1)
+    { 
+        sendByte('C');	
+        sendByte('#');	
+			  delayTickOS(DELAY);			
     } 
 } 
 
 
-
-void (*taskName[])(void)={task0,task1};
+void (*taskName[])(void)={task0,task1,task2};
 
 	
       // ErrorCode : 1- TaskCountOS != TASKSIZE+1
@@ -131,9 +136,5 @@ int main(void)
 		 sendByte('0'+ errorCode);	// never execute if start successfully
 	 
 } // main
-
-
-
-
 
 
