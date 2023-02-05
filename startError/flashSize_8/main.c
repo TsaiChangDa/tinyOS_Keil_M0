@@ -21,7 +21,6 @@ void task0(void)
 	  while(1)
     { 
 				 queryReadyTableOS(carray);
-			   lowPowerModeOS(0x0);
 			   endISRpreemptOS();
 			   nonBlockingCallbackOS(xx);
 			   errorPendSizeOS();
@@ -96,7 +95,7 @@ int main(void)
 	
 	   arraySize = sizeof(taskName) / sizeof(taskName[0]);
      startTaskIndex = 0;
-     startOS(taskName, arraySize, startTaskIndex, CLOCKOS, NULL); 
+     startOS(taskName, arraySize, startTaskIndex, NULL, NULL, NULL); 
 } 
 
 
