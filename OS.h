@@ -36,7 +36,7 @@
 #define  OSCLOCK_1M       1000000
 
            // select OS tick
-#define  CLOCKOS          OSCLOCK_100mS 
+#define  CLOCKOS          OSCLOCK_200mS 
 
            // check safety
 #define  COUNTSTARTOS     10
@@ -68,9 +68,8 @@
 /*****************************************************************/
 
        // Kernel
-char         startOS(void (*[])(void), int, int, int, void (*)(int));
+char         startOS(void (*[])(void), int, int, void (*)(int), void (*)(void), void (*)(void));
 void         queryReadyTableOS(char*);
-int          lowPowerModeOS(int*);
 void         endISRpreemptOS(void);
 int          nonBlockingCallbackOS(int (*)(void));
 char         errorPendSizeOS(void);

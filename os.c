@@ -15,9 +15,6 @@ extern int interruptNumberOS(void);
 extern void setPSPOS(unsigned int);
 extern void setCONTROLOS(unsigned int);
 
-extern void sendByte(char);
-extern void print32bits(unsigned  int);
-
 typedef struct
 {
    void**  q;    
@@ -51,6 +48,8 @@ typedef struct
 } eventOS;
 
 void          (*overflowHandlerOS)(int);
+void          (*stopClockOS)(void);
+void          (*restartClockOS)(void);
 unsigned int* CurrentTaskOS;      // address of sp(the entry of CPU registers stored in ram stack)
 unsigned int* NextTaskOS;         // address of sp 
 int           CurrentPriorityOS;   // 0 <= task priority <= TASKSIZE - 1
@@ -365,7 +364,16 @@ void executeHighestPriorityTaskOS(void)  // do not need waitTick
 						 if ( CountTaskOS[CurrentPriorityOS] > 4000000000 )  // max = 4,294,967,295
              {
 	                CountTaskOS[CurrentPriorityOS] = COUNTSTARTOS;
-             }						  
+             }	
+
+				     if( (highestPriority == (int)TASKSIZE) && (stopClockOS != NULL) ) 
+			       {
+                  stopClockOS();				 
+						 }
+				 }
+				 else if( (highestPriority != (int)TASKSIZE) && (restartClockOS != NULL) ) 
+			   {
+             restartClockOS();				 
 				 }
 						      	    // executable condition
          if( highestPriority != CurrentPriorityOS )
@@ -606,7 +614,7 @@ char checkStartErrorOS(int arraySize, int startPriority)
 
 
 
-char startOS(void (*taskName[])(void), int arraySize, int startPriority, int clock, void (*danger)(int))
+char startOS(void (*taskName[])(void), int arraySize, int startPriority, void (*danger)(int), void (*stopPeripheralClock)(void), void (*restartPeripheralClock)(void))
 { 
 	  char         errorCode;
 	  unsigned int topStackPointer;
@@ -619,12 +627,14 @@ char startOS(void (*taskName[])(void), int arraySize, int startPriority, int clo
 		}
 	
 		overflowHandlerOS = danger;
-    initializeSysTickOS(clock);
+		stopClockOS = stopPeripheralClock;
+		restartClockOS = restartPeripheralClock;
+    initializeSysTickOS(CLOCKOS);
     setHandlerPriorityOS();		
 		initializeEventOS();
 		initializeTaskOS(taskName);
 
-		TickPerSecondOS = CPUclockOS / clock;
+		TickPerSecondOS = (int)CPUclockOS / (int)CLOCKOS;
     CurrentPriorityOS = startPriority;			 
 
 		topStackPointer = (int)TaskSpPointerOS[CurrentPriorityOS+1];
@@ -768,42 +778,6 @@ void queryReadyTableOS(char* result)
 }
 
 
-
-int lowPowerModeOS(int *next)
-{
-	  int i;
-	  int ready = 0;
-	  int tick = 999999;
-	
-	  *next = -1;
-	
-	  for (i=0; i<TASKSIZE; i++)
-	  {
-		    if ( checkSetBitOS(ReadyTableOS, i) )
-				{
-					  ready++;
-				}
-	  }
-
-    if ( ready == 1 )
-		{
-	     for (i=0; i<TASKSIZE; i++)
-	     {
-			     if ( (i != CurrentPriorityOS) && (WaitTickOS[i] < tick) )
-					 {
-							 tick = WaitTickOS[i];
-						 	 *next = i;
-					 }
-		   }
-		}		
-
-    tick = ( (tick > 2) && (tick != 999999) )	? tick - 1 : -1;
-	
-		return  tick;
-}
-
-
-
          //  ISR calls it at the end for preemptive process.
 void  endISRpreemptOS(void) 
 {
@@ -837,7 +811,7 @@ void SysTick_Handler(void)
      int  i;
 	   char schedule=0; 
 		 char resumeUntil;
-	
+
 	   SystemTickOS++;
 
 	   if ( FlagTxRxOS )
