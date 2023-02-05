@@ -183,7 +183,7 @@ int main(void)
 	   initializeUART(9600);   // 600 bytes
 	   arraySize = sizeof(taskName) / sizeof(taskName[0]);
      startTaskIndex = 0;
-     errorCode = startOS(taskName, arraySize, startTaskIndex, CLOCKOS);  // create idleTaskOS()
+     errorCode = startOS(taskName, arraySize, startTaskIndex, NULL, NULL);  // create idleTaskOS()
 		 sendByte('0'+ errorCode);	// never execute if start successfully 
 	
 } // main
