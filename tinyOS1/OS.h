@@ -17,6 +17,7 @@
 
 #define  CLOCKOS         OSCLOCK_100mS  // number of core clock per OS tick clock
 
+#define  NULL             0x0
 #define  INFINITEOS      -1
 	
 #define SystickControlRegisterOS       ( *( ( volatile unsigned int* ) 0xE000E010 ) )
@@ -26,12 +27,12 @@
 #define HandlerPriorityRegisterOS      ( *( ( volatile unsigned int* ) 0xE000ED20 ) )  //SHPR3
 
             // application function
-char startOS(void (*[])(void), int, int, int);
+char startOS(void (*[])(void), int, int, void (*)(void), void (*)(void));
 void queryReadyTableOS(char*);
 int  findOptimalPaddingOS(void);
 void delayTickOS(int);
 void delayTimeOS(int, int, int, int);
 void postSemOS(char);
 void pendSemOS(char, int);
-int  lowPowerModeOS(int*);
+
 

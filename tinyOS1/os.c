@@ -12,6 +12,8 @@ typedef struct
 	 unsigned int  registerStack[16];
 } stackOS;     
 
+void         (*stopClockOS)(void);
+void         (*restartClockOS)(void);
 stackOS       *CurrentTaskOS;      // the same as SP address
 stackOS       *NextTaskOS;         // the same as SP address
 stackOS       TaskOS[TASKSIZE+1];  // include idleTaskOS()
@@ -25,18 +27,15 @@ char          SemNumberTaskOS[TASKSIZE];  // initialized in startOS(), used in p
 char          PriorityOwnEventOS[TASKSIZE];     // array index is priority, 0 <= priority <=  TASKSIZE - 1
 
       // original local variables
-int  highestPriority;     // executeHighestPriorityTaskOS()
-int  pack;                // findOptimalPaddingOS()
-int  maximum;             // findOptimalPaddingOS()
-char pend;                // IsPending()  
-char schedule;            // SysTick_Handler()
-int  tick;	              // delayTimeOS(), lowPowerModeOS()
-int  ready;               // lowPowerModeOS()
-char bit;	                // checkReadyTableSetBitOS()
+int   highestPriority;     // executeHighestPriorityTaskOS()
+int   pack;                // findOptimalPaddingOS()
+int   maximum;             // findOptimalPaddingOS()
+char  pend;                // IsPending()  
+char  schedule;            // SysTick_Handler()
+int   tick;	              // delayTimeOS(), lowPowerModeOS()
+int   ready;               // lowPowerModeOS()
+char  bit;	                // checkReadyTableSetBitOS()
 unsigned int priorityBit; // checkReadyTableSetBitOS()
-		
-extern void sendByte(char);
-extern void print32bits(unsigned  int );
 
 
 void initializeSysTickOS(unsigned int clock)
@@ -188,6 +187,18 @@ void executeHighestPriorityTaskOS(void)
             highestPriority =  findLeastBitOS(ReadyTableOS);
 				}
 							
+				if( CurrentPriorityOS != (int)TASKSIZE ) 
+			  {
+				     if( (highestPriority == (int)TASKSIZE) && (stopClockOS != NULL) ) 
+			       {
+                  stopClockOS();				 
+						 }		 
+				}
+				else if( (highestPriority != (int)TASKSIZE) && (restartClockOS != NULL) ) 
+			  {
+            restartClockOS();				 
+				}
+				 
         if(  highestPriority != CurrentPriorityOS   )
         {  
 					  DISABLE_INTERRUPT;
@@ -199,7 +210,7 @@ void executeHighestPriorityTaskOS(void)
 					  ENABLE_INTERRUPT;
         }
 			 
-		} // if
+		}
 			 
 }
 
@@ -238,7 +249,7 @@ void idleTaskOS(void)
 
 
           // ReadyTable is initialized
-char startOS(void (*taskName[])(void), int arraySize, int startPriority, int clock)
+char startOS(void (*taskName[])(void), int arraySize, int startPriority, void (*stopPeripheralClock)(void), void (*restartPeripheralClock)(void))
 { 
 	   int         i;
 
@@ -261,13 +272,16 @@ char startOS(void (*taskName[])(void), int arraySize, int startPriority, int clo
 			 ENABLE_INTERRUPT;
 			   initializeTaskOS(taskName[i], i);  
 		 }
+		 
+		 stopClockOS = stopPeripheralClock;
+	 	 restartClockOS = restartPeripheralClock;
 		
 		 initializeTaskOS(idleTaskOS, TASKSIZE);  // create system's idleTaskOS()	 
-	   initializeSysTickOS(clock);
+	   initializeSysTickOS(CLOCKOS);
 		 setHandlerPriorityOS();	
 		 
     DISABLE_INTERRUPT;
-		 TickPerSecondOS = SystemCoreClock / clock;
+		 TickPerSecondOS = SystemCoreClock / CLOCKOS;
      CurrentPriorityOS = startPriority;		 
      CurrentTaskOS = &TaskOS[CurrentPriorityOS]; 
 		ENABLE_INTERRUPT;
@@ -499,40 +513,6 @@ void queryReadyTableOS(char* result)
 		    result[i] = checkReadyTableSetBitOS(i);
 	  }
 }
-
-int lowPowerModeOS(int *next)
-{
-	  int i;
-	
-	  ready = 0; 
-	  tick = 999999;
-	  *next = -1;
-	
-	  for (i=0; i<TASKSIZE; i++)
-	  {
-		    if ( checkReadyTableSetBitOS(i) )
-				{
-					  ready++;
-				}
-	  }
-
-    if ( ready == 1 )
-		{
-	     for (i=0; i<TASKSIZE; i++)
-	     {
-			     if ( (i != CurrentPriorityOS) && (WaitTickOS[i] < tick) )
-					 {
-							 tick = WaitTickOS[i];
-						 	 *next = i;
-					 }
-		   }
-		}		
-
-    tick = ( (tick > 2) && (tick != 999999) )	? tick - 1 : -1;
-	
-		return  tick;
-}
-
 
 
 
