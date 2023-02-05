@@ -109,7 +109,7 @@ void task1(void)
    while(1) 
    { 
        sendByte('B');	
-		   delayTimeOS(0, 0, 1, 0);		
+		   delayTimeOS(0, 0, 1, 0);
 		 	 postSemOS(99); 
     } 
 } 
@@ -131,7 +131,7 @@ int main(void)
 	
 	   arraySize = sizeof(taskName) / sizeof(taskName[0]);
      startTaskIndex = 0;
-     errorCode = startOS(taskName, arraySize, startTaskIndex, CLOCKOS, NULL); 
+     errorCode = startOS(taskName, arraySize, startTaskIndex, NULL, NULL, NULL); 
 		 sendByte('0'+ errorCode);	// never execute if start successfully
 	 
 } // main
