@@ -61,7 +61,7 @@ int main(void)
 	
 	   arraySize = sizeof(taskName) / sizeof(taskName[0]);
      startTaskIndex = 0;
-     startOS(taskName, arraySize, startTaskIndex, CLOCKOS, NULL); 
+     startOS(taskName, arraySize, startTaskIndex, NULL, NULL, NULL); 
 	 
 } // main
 
