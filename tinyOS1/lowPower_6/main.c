@@ -85,31 +85,16 @@ void print32bits(unsigned  int  y)
 		sendByte(' ');
 }
 
-
-void lowPower(void)
+void stopperipheralClock(void)
 {
-	  int  i;
-	  int  tick;
-	  int  next;
-	  char result[4];
-	
-	  tick = lowPowerModeOS(&next);
-				
-	  if( tick > 0 )
-		{
-				sendByte('0' + next);
-        sendByte(' ');
-			  queryReadyTableOS(result);
-			  for(i=0; i<4; i++)
-			  {
-				    sendByte('0' + result[i]);
-			  }
-        sendByte(' ');				
-				print32bits(tick);
-        sendByte(' ');						
-			  // implement low power mode
-		}
-	
+	// stop peripheral clock
+    sendByte('1');
+}
+
+void restartperipheralClock(void)
+{
+	 // restart peripheral clock
+    sendByte('2');
 }
 
 
@@ -118,7 +103,6 @@ void task0(void)
 	  while(1)
     { 
         sendByte('A');
-        lowPower();			
 			  delayTickOS( 37 );		
     } 
 } 
@@ -129,7 +113,6 @@ void task1(void)
     while(1) 
     { 
         sendByte('B');	
-        lowPower();				
 				delayTickOS( 31 );
     }  
 } 
@@ -138,8 +121,7 @@ void task2(void)
 {			 
 	  while(1)
     { 
-        sendByte('C');
-        lowPower();				
+        sendByte('C');	
 			  delayTickOS( 23 );		
     } 
 } 
@@ -149,8 +131,7 @@ void task3(void)
 {	
     while(1) 
     { 
-        sendByte('D');	
-        lowPower();				
+        sendByte('D');			
 			  delayTickOS( 17 );
     }  
 } 
@@ -169,7 +150,7 @@ int main(void)
 	
 	   arraySize = sizeof(taskName) / sizeof(taskName[0]);
      startTaskIndex = 0;
-     errorCode = startOS(taskName, arraySize, startTaskIndex, CLOCKOS); 
+     errorCode = startOS(taskName, arraySize, startTaskIndex, stopperipheralClock, restartperipheralClock); 
 		 sendByte('0'+ errorCode);	// never execute if start successfully
 	 
 } // main
