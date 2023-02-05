@@ -95,7 +95,6 @@ void task0(void)
     } 
 } 
 
-
 void task1(void)  
 {	
     while(1) 
@@ -113,7 +112,6 @@ void task2(void)
 			  delayTickOS( 10 );		
     } 
 } 
-
 
 void task3(void)  
 {	
@@ -139,7 +137,7 @@ int main(void)
 	
 	   arraySize = sizeof(taskName) / sizeof(taskName[0]);
      startTaskIndex = 0;
-     errorCode = startOS(taskName, arraySize, startTaskIndex, CLOCKOS); 
+     errorCode = startOS(taskName, arraySize, startTaskIndex, NULL, NULL); 
 		 sendByte('0'+ errorCode);	// never execute if start successfully
 	 
 } // main
