@@ -4,87 +4,90 @@
 #if   defined ( KEIL )
 #if   defined ( CM0 )
 
-__asm int findLeastBitOS(unsigned int Table)
+int findLeastBitOS(unsigned int Table) 
 {
-	MOVS R3, #0
-	
-loop1
-	LSRS R0,R0,#1
-	BCS  return1
-	ADDS  R3, R3, #1
-	CMP  R3, #32
-	BLT  loop1
-
-return1
-	MOV  R0, R3  
-	BX   LR
+	__asm(
+	"  MOVS R3, #0 \n"	
+  "loop1: \n"
+	"  LSRS R0,R0,#1 \n"
+	"  BCS  return1 \n"
+	" ADDS  R3, R3, #1 \n"
+	" CMP  R3, #32 \n"
+	" BLT  loop1 \n"
+  "return1: \n"
+	" MOV  R0, R3 \n"  
+	" BX   LR \n"
+	);
+	return 0;
 }
 
-__asm int interruptNumberOS(void)  
+int interruptNumberOS(void)
 {
-    MRS  R0, IPSR
-	  BX   LR
+    __asm(
+   "	MRS  R0, IPSR \n"
+	 "  BX   LR \n"
+	);
+	return 0;
 
-}
-
-
-__asm void setPSPOS(unsigned int topPointer)
-{
-	  PRESERVE8
-	  THUMB
-	
-    MSR  PSP, R0
-	  BX   LR	
 }
 
 
-__asm void setCONTROLOS(unsigned int usePSP)
+void setPSPOS(unsigned int topPointer)
 {
-		PRESERVE8
-	  THUMB
-	
-    MSR  CONTROL, R0
-	  ISB
-	  BX   LR	
+	  __asm(
+//	  "  PRESERVE8 \n"
+//	  " THUMB \n"
+    " MSR  PSP, R0 \n"
+	  " BX   LR \n"
+  );	
+}
+
+
+void setCONTROLOS(unsigned int usePSP)
+{
+		__asm(
+	 // "  PRESERVE8 \n"
+	 // "  THUMB \n"
+    "  MSR  CONTROL, R0 \n"
+	  "  ISB \n"
+	  "  BX   LR \n"
+  );	
 }
 
 
 
-__asm void PendSV_Handler(void)
+void PendSV_Handler(void)
 {	
 //PUSH 
-	MRS	R0, PSP  
-	SUBS R0, #32
-	STMIA R0!,{R4-R7} 
-	MOV	R4, R8
-	MOV	R5, R9
-	MOV	R6, R10
-	MOV	R7, R11
-	STMIA R0!,{R4-R7}   
-	SUBS R0, #32       
-	IMPORT  CurrentTaskOS  
-	LDR	R2, =CurrentTaskOS
-	LDR	R1, [R2]         
-	STR	R0, [R1]        
-	
-//POP	
-	IMPORT  NextTaskOS   
-	LDR	R2, =NextTaskOS
-	LDR	R1, [R2]
-	LDR	R0, [R1]        
-	LDMIA R0!,{R4-R7}  
-	LDMIA R0!,{R1-R3}  
-	MOV	R8, R1
-	MOV	R9, R2
-	MOV	R10, R3
-	LDMIA R0!,{R1}	
-	MOV	R11, R1        
-
-	MSR	PSP, R0      
-
-	LDR R3, =0xFFFFFFFD  
-
-	BX	R3       
+	__asm(
+	"  MRS	R0, PSP \n"  
+	"  SUBS R0, #32  \n"
+	"  STMIA R0!,{R4-R7} \n" 
+	"  MOV	R4, R8 \n"
+	"  MOV	R5, R9  \n"
+	"   MOV	R6, R10 \n"
+	"  MOV	R7, R11 \n"
+	" STMIA R0!,{R4-R7} \n"   
+	"  SUBS R0, #32  \n"       
+//	"  IMPORT  CurrentTaskOS \n"  
+	"  LDR	R2, =CurrentTaskOS \n"
+	"  LDR	R1, [R2] \n"         
+	"  STR	R0, [R1]  \n"        	
+//	"  IMPORT  NextTaskOS \n"   
+	"  LDR	R2, =NextTaskOS \n"
+	"  LDR	R1, [R2] \n"
+	"  LDR	R0, [R1] \n"        
+	"  LDMIA R0!,{R4-R7} \n"  
+	"  LDMIA R0!,{R1-R3}  \n"  
+	"   MOV	R8, R1  \n"
+	"  MOV	R9, R2  \n"
+	"  MOV	R10, R3 \n"
+	"  LDMIA R0!,{R1}  \n"	
+	"  MOV	R11, R1  \n"        
+	"  MSR	PSP, R0  \n"      
+	"  LDR R3, =0xFFFFFFFD  \n"  
+	"   BX	R3  \n"       
+	);
 }
 
 
