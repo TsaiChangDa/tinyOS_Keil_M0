@@ -15,6 +15,9 @@ extern int interruptNumberOS(void);
 extern void setPSPOS(unsigned int);
 extern void setCONTROLOS(unsigned int);
 
+extern void sendByte(char);
+extern void print32bits(unsigned  int);
+
 typedef struct
 {
    void**  q;    
@@ -313,8 +316,8 @@ void executeHighestPriorityTaskOS(void)  // do not need waitTick
  		{
 			  while ( danger > 0 )
 				{  
-					  highestPriority = highestEventPriorityOS();
-					  if ( highestPriority < 0 )
+				//	  highestPriority = highestEventPriorityOS();
+				//	  if ( highestPriority < 0 )
 						{
 				        index = 0;
 		            while (  ReadyTableOS[index] == 0  )
